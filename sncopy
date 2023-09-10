@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+# sncopy
+
+import os
+import string
+import random
+import shutil
+
+# count the total number of files in CWD and its subdirectories
+def count_files_in_directory(path):
+    total_files = 0
+    total_dirs = 0
+
+    for root, dirs, files in os.walk(path):
+        # remove annoying hidden .DS_Store file
+        try:
+            files.remove('.DS_Store')
+        except:
+            pass
+        # count them!
+        total_files += len(files)
+        total_dirs += len(dirs)
+
+    return total_files, total_dirs
+
+# Function to create a separate directory for renamed files
+def create_output_directory(path):
+    characters = string.ascii_letters + string.digits
+    output_directory =  path + '.' + ''.join(random.choice(characters) for _ in range(10))
+    os.makedirs(output_directory, exist_ok=True)
+    return output_directory
+
+# count the total number of files in CWD and its subdirectories
+def rename_copy_files(path, num_file, output_directory, basename='pics'):
+    ind = 0
+    zfill = len(str(num_file))
+    for root, dirs, files in os.walk(path):
+        try:
+            files.remove('.DS_Store')
+        except:
+            pass
+        # copy files to the new output directory 
+        for name in files:
+            file_path = os.path.join(root, name)
+            extension = os.path.splitext(name)[-1]
+            # check if the file is an image file 
+            if os.path.isfile(file_path) and extension in ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp']:
+                new_name = basename + '.' + str(ind).zfill(zfill) + extension
+                ind += 1
+                file_dest = os.path.join(output_directory, new_name)
+                shutil.copy(file_path, file_dest)
+
+if __name__ == '__main__':
+    cwd_path = os.getcwd()
+    num_files, td = count_files_in_directory(cwd_path)
+    output_dir = create_output_directory(cwd_path)
+    print(output_dir)
+    rename_copy_files(cwd_path, num_files, output_dir, basename='pics') 

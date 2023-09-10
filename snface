@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+# snface
+
+import os
+import string
+import random
+from tqdm import tqdm
+from PIL import Image
+from retinaface import RetinaFace
+
+home_directory = os.path.expanduser("~")
+patch_image_path = os.path.join(home_directory, 'Documents/white.logo.png')
+image_types = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp']
+
+# Function to create a separate directory for defaaced files
+def create_output_directory(path):
+    characters = string.ascii_letters + string.digits
+    output_directory =  path + '.defaced.' + ''.join(random.choice(characters) for _ in range(10))
+    os.makedirs(output_directory, exist_ok=True)
+    return output_directory
+
+if __name__ == '__main__':
+    # specify the directory containing the files and list of them
+    directory = os.getcwd()
+    files = os.listdir(directory)
+    try:
+        files.remove('.ds_store')
+    except:
+        pass
+    
+    # create and return output directory and load patch image with its ratio
+    output_directory = create_output_directory(directory)
+    fg = Image.open(patch_image_path)
+    ratio = float(fg.size[1]/fg.size[0])
+
+    # iterate through the files and deface them
+    for file_name in tqdm(files): 
+        # obtain the file path and its extension
+        orig_path = os.path.join(directory, file_name)
+        name_only, extension = os.path.splitext(file_name)
+
+        # move to the next loop if the file is not an image file
+        isimagefile = os.path.isfile(orig_path) and extension in image_types
+        if not isimagefile: continue
+
+        # detect facial features
+        resp = RetinaFace.detect_faces(orig_path)
+
+        # move to the next loop if no face is detected 
+        if type(resp) == tuple: continue
+
+        # construct the full path for new file
+        new_name = name_only + '.defaced' + extension
+        new_path = os.path.join(output_directory, new_name)
+
+        # paste logo over faces in original image and save it
+        with Image.open(orig_path) as bg:
+            # loop through faces to paste logo over the image
+            for face in resp:
+                # get coordinates of the bounding box
+                x, y, x_max, y_max = resp[face]['facial_area']
+                width = x_max - x
+                height = ratio*width
+                x_center = (x_max + x)/2
+                y_center = (y_max + y)/2
+
+                # x, y positions based on adjust width and height
+                scale = 1.5
+                width = int(scale*width)
+                height = int(scale*height)
+                x = int(x_center - 0.5*width)
+                y = int(y_center - 0.5*height)
+
+                # resize logo from paste image and paste it
+                logo = fg.resize((width, height))
+                bg.paste(logo, (x, y), logo)
+            
+            # save logo patched image
+            bg.save(new_path)
+
+    # close the patch image and print out completion message
+    fg.close()     
+    print("files defaced successfully.")
+
