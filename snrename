@@ -1,0 +1,40 @@
+#!/usr/bin/env python
+# snrename
+
+import os
+
+# function to check if input object is regular directory or not
+def cond(parent_directory, filesystem_object):
+    path = os.path.join(parent_directory, filesystem_object)
+    isdir =  os.path.isdir(path)
+    not_hidden = not filesystem_object.startswith('.')
+    return isdir and not_hidden
+
+# Function to create a separate directory for reudced image files
+def create_output_directory(path):
+    characters = string.ascii_letters + string.digits
+    random_string = ''.join(random.choice(characters) for _ in range(10))
+    output_directory =  path + '.reduced.' + random_string
+    os.makedirs(output_directory, exist_ok=True)
+    return output_directory
+
+if __name__ == '__main__':
+    # get current working directory, subdirectories, and index string length
+    dir_path = os.getcwd()
+    subdirectories = [d for d in os.listdir(dir_path) if cond(dir_path, d)]
+    zfill = len(str(len(subdirectories)))
+
+    # Rename each subdirectory with a sequential index
+    for index, old_dir_name in enumerate(subdirectories):
+        # Generate the new directory name with an index
+        new_dir_name = "dir." + str(index).zfill(zfill)
+        
+        # Create the full paths for the old and new directory names
+        old_dir_path = os.path.join(dir_path, old_dir_name)
+        new_dir_path = os.path.join(dir_path, new_dir_name)
+        
+        # Rename the directory
+        os.rename(old_dir_path, new_dir_path)
+
+    # end of program
+    print("directories renamed successfully")

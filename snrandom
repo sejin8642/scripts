@@ -5,13 +5,6 @@ import os
 import random
 import string
 
-# Function to create a separate directory for renamed files
-def create_output_directory(path):
-    characters = string.ascii_letters + string.digits
-    output_directory =  path + '.defaced.' + ''.join(random.choice(characters) for _ in range(10))
-    os.makedirs(output_directory, exist_ok=True)
-    return output_directory
-
 if __name__ == '__main__':
     # specify the directory containing the files and list of them
     directory = os.getcwd()
@@ -20,10 +13,6 @@ if __name__ == '__main__':
         files.remove('.DS_Store')
     except:
         pass
-
-    output_directory = create_output_directory(directory)
-
-    print(output_directory)
 
     # shuffle the list of files randomly and define basename and indexing width
     random.shuffle(files)

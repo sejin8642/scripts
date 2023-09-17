@@ -24,7 +24,7 @@ if __name__ == '__main__':
     directory = os.getcwd()
     files = os.listdir(directory)
     try:
-        files.remove('.ds_store')
+        files.remove('.DS_Store')
     except:
         pass
     

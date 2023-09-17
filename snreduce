@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+# snreduce
+
+import sys
+import os
+import string
+import random
+from tqdm import tqdm
+from PIL import Image
+
+image_types = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp']
+
+# return mode and scale factor
+def mode_scale():
+    # obtain arguments and exit the program if fewer arguments are provided 
+    try:
+        mode = sys.argv[1]
+        scale = float(sys.argv[2])
+    except IndexError:
+        print("Error: fewer arguments are provided")
+        sys.exit(1)
+
+    # check to see if correct arguments are provided
+    if (mode != 'r' and mode != 'c') or scale < 0 or 1 < scale:
+        print("Error: incorrect arguments are provided")
+        sys.exit(1)
+
+    return mode, scale
+
+# obtain working directory and file list
+def directory_files():
+    # specify the directory containing the files and list of them
+    directory = os.getcwd()
+    files = os.listdir(directory)
+    try:
+        files.remove('.DS_Store')
+    except:
+        pass
+
+    return directory, files
+
+# Function to create a separate directory for defaaced files
+def create_output_directory(path):
+    characters = string.ascii_letters + string.digits
+    random_string = ''.join(random.choice(characters) for _ in range(10))
+    output_directory =  path + '.reduced.' + random_string
+    os.makedirs(output_directory, exist_ok=True)
+    return output_directory
+
+if __name__ == '__main__':
+    mode, scale = mode_scale() # get mode and scale factor
+    directory, files = directory_files() # get dir and files
+
+    # create and return output directory 
+    output_directory = create_output_directory(directory)
+
+    # iterate through the files and resize them
+    for file_name in tqdm(files): 
+        # obtain the file path and its extension
+        orig_path = os.path.join(directory, file_name)
+        name_only, extension = os.path.splitext(file_name)
+
+        # move to the next loop if the file is not an image file
+        isimagefile = os.path.isfile(orig_path) and extension in image_types
+        if not isimagefile: continue
+
+        # construct the full path for new file
+        new_name = name_only + '.reduced' + extension
+        new_path = os.path.join(output_directory, new_name)
+
+        # paste logo over faces in original image and save it
+        with Image.open(orig_path) as image:
+            # obtain the width, height of image
+            width, height = image.size
+
+            # reduce the image size
+            if 'r' in mode:
+                width = int(scale*width)
+                height = int(scale*height)
+                output_image = image.resize((width, height)) 
+
+            # cut the bottom part of the image
+            if 'c' in mode:
+                height = height - int(scale*height)
+                output_image = image.crop((0, 0, width, height))
+
+            # save the image
+            output_image.save(new_path)
+
+    # end of program
+    print("images modifid successfully")
